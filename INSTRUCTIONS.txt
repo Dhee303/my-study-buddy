@@ -1,0 +1,157 @@
+================================================================================
+STORY TEACHER - SYSTEM DOCUMENTATION & EXECUTION INSTRUCTIONS
+================================================================================
+
+1. OVERVIEW & PURPOSE
+--------------------------------------------------------------------------------
+Story Teacher is an interactive web application designed to teach academic 
+and scientific concepts to children (ages 5 to 15) through engaging, age-tailored 
+stories, followed by dynamic comprehension checks and parent/teacher analytics.
+
+The application leverages:
+- Framework: Next.js 16 (App Router, React 19)
+- Styling: Tailwind CSS v4, Lucide React icons, and Web Audio API
+- AI Integration: Official Google Gemini SDK (@google/generative-ai)
+- Dynamic Effects: Canvas Confetti & custom browser sound synthesizers
+
+
+2. QUICK START / RUN INSTRUCTIONS
+--------------------------------------------------------------------------------
+Step 1: Install Dependencies (Already performed in project directory)
+  npm install
+
+Step 2: Configure Environment Variables
+  Edit .env.local and insert your Gemini API Key:
+    GEMINI_API_KEY=your_actual_gemini_api_key_here
+    NEXT_PUBLIC_GEMINI_API_KEY=your_actual_gemini_api_key_here
+
+  * Note: If you don't have an API key right now, you can still test immediately!
+    The app has built-in offline interactive demo topics (e.g., Photosynthesis,
+    Gravity, Black Holes) and an in-app "Settings / API Key" modal.
+
+Step 3: Run the Development Server
+  npm run dev
+
+Step 4: Open in Browser
+  Navigate to: http://localhost:3000
+
+
+3. ARCHITECTURE & CODEBASE EXECUTION COMMENTS
+--------------------------------------------------------------------------------
+
+[FILE 1] .env.local
+- Execution Comment:
+  Stores the Google Gemini API credentials. Read by the server API route 
+  (process.env.GEMINI_API_KEY). Also supported via client-side local overrides.
+
+[FILE 2] src/types/index.ts
+- Execution Comment:
+  Contains all TypeScript interfaces and types across the application:
+  - QuizQuestion: models questions, options, correctAnswer, and hintForWrongAnswer.
+  - StoryPayload: models the story title, text paragraphs, quiz list, conceptsMastered,
+    and recommendedNextTopic.
+  - GenerateStoryRequest: payload contract for user requests.
+  - QuizSubmission: tracks score, accuracy percentage, and per-question attempt histories.
+  - AppScreen: state machine type ('setup' | 'story' | 'quiz' | 'dashboard').
+
+[FILE 3] src/lib/demo-stories.ts
+- Execution Comment:
+  Pre-loaded curriculum data for instant demo testing and offline resilience.
+  Includes rich stories and quizzes for:
+  - Photosynthesis ("Pip the Sprout's Sunny Secret")
+  - Gravity ("Sir Isaac's Bouncing Apple Adventure")
+  - Black Holes ("Cosmo the Comet and the Cosmic Drain")
+  Provides getMatchingDemoStory() helper to match keywords if no API key is set.
+
+[FILE 4] src/lib/sound.ts
+- Execution Comment:
+  Kid-friendly sound and visual effects:
+  - playSuccessChime(): Generates a warm musical major arpeggio (C5 -> E5 -> G5 -> C6)
+    using the standard browser Web Audio API oscillator. Zero external MP3 files needed!
+  - playHintSound(): Plays a soft warm triangle-wave chime when a hint is activated.
+  - triggerCelebrationConfetti(): Launches colorful multi-angle confetti using
+    canvas-confetti on quiz completion.
+
+[FILE 5] src/app/api/generate/route.ts
+- Execution Comment:
+  Next.js Server API Route (POST /api/generate):
+  - Validates user input (topic, child age 5-15).
+  - Selects the active API key (from request payload, GEMINI_API_KEY, or NEXT_PUBLIC_GEMINI_API_KEY).
+  - Falls back gracefully to high-quality demo stories if key is unset or placeholder.
+  - Instantiates GoogleGenerativeAI with model 'gemini-1.5-flash'.
+  - Sends a structured system prompt requiring strict JSON output matching StoryPayload.
+  - Parses and strips markdown fences (```json ... ```).
+  - Normalizes quiz answer options and returns validated JSON to the frontend.
+
+[FILE 6] src/components/Navbar.tsx
+- Execution Comment:
+  Top sticky header component:
+  - Shows "Story Teacher" branding with playful bounce icons.
+  - Multi-step progress bar pills (1. Setup -> 2. Story -> 3. Quiz -> 4. Report).
+  - Quick action buttons: "New Topic" reset and "API Key / Demo Settings" modal trigger.
+
+[FILE 7] src/components/ApiKeyModal.tsx
+- Execution Comment:
+  Modal dialog allowing users to:
+  - Paste and test their personal Gemini API key.
+  - Persist key safely in browser localStorage.
+  - Clear key to return to Demo Mode.
+  - Direct link to Google AI Studio for free API key generation.
+
+[FILE 8] src/components/SetupScreen.tsx (Screen A)
+- Execution Comment:
+  Screen A: User setup and story generation request interface:
+  - Topic input with clear button and preset chips (Photosynthesis, Black Holes,
+    Gravity, Pizza Fractions, Water Cycle, Dinosaurs, Volcanoes, etc.).
+  - Child's age selector (ages 5 to 15) with pedagogical cognitive level description.
+  - Optional story genre/flavor selector (Space, Fantasy, Detective, Animals, etc.).
+  - Submit button with animated loading state and rotating educational status messages.
+
+[FILE 9] src/components/StoryScreen.tsx (Screen B)
+- Execution Comment:
+  Screen B: Story Viewer:
+  - Displays generated story with high-readability typography and breathing space.
+  - Built-in Text-to-Speech narration ("Read Aloud") with play, pause, resume, and stop
+    controls using Web Speech API (window.speechSynthesis).
+  - Font size controls (A, A+, A++) for young readers.
+  - Numbered paragraph cards and educational takeaways summary box.
+  - "I'm Ready for the Quiz! 🎯" primary button to transition to Screen C.
+
+[FILE 10] src/components/QuizScreen.tsx (Screen C)
+- Execution Comment:
+  Screen C: Comprehension Check Quiz:
+  - Progress bar and question counter (e.g., Question 1 of 3).
+  - 4 interactive multiple-choice answer cards (A, B, C, D).
+  - Immediate visual feedback on selection:
+    * Correct: Emerald green glow, checkmark, celebratory sound chime, confetti poof.
+    * Incorrect: Warm rose border, hint sound, and AI-generated "Teacher's Hint"
+      guiding the child back to the story concept so they can learn and try again!
+  - Tracks attempts and first-try correctness for the teacher summary.
+
+[FILE 11] src/components/DashboardScreen.tsx (Screen D)
+- Execution Comment:
+  Screen D: Parent & Teacher Analytics Dashboard:
+  - Automatic celebratory confetti shower upon arrival.
+  - Score Card: Displays total score (e.g., "3 / 3") and accuracy percentage.
+  - Concepts Mastered: List of specific educational principles acquired.
+  - Recommended Next Topic: Next logical topic suggestion with a 1-click
+    "Start Next Lesson" button that pre-fills Screen A.
+  - Per-question review breakdown.
+  - "View / Print Award Certificate" trigger.
+
+[FILE 12] src/components/CertificateModal.tsx
+- Execution Comment:
+  Printable Young Scholar Award Certificate:
+  - Includes child's age, story title, date, score badge, and golden border.
+  - Features standard browser window.print() integration optimized for printing or PDF saving.
+
+[FILE 13] src/app/page.tsx
+- Execution Comment:
+  Main Client Controller:
+  - Manages global state: currentScreen, storyData, quizResult, isLoading, error, prefillTopic.
+  - Orchestrates seamless screen transitions with automatic smooth scroll to top.
+  - Coordinates fetch to /api/generate with localStorage API key injection.
+
+================================================================================
+END OF INSTRUCTIONS
+================================================================================

@@ -1,0 +1,224 @@
+/* Import Comic Book Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Fredoka:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --neo-yellow: #FFE156;
+    --neo-cyan: #00E5FF;
+    --neo-pink: #FF6B9D;
+    --neo-green: #7CFF6B;
+    --neo-orange: #FF9F43;
+    --neo-purple: #C56CF0;
+    --neo-red: #FF6B6B;
+    --neo-blue: #4ECDC4;
+    --neo-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+    --neo-shadow-sm: 4px 4px 0px 0px rgba(0,0,0,1);
+    --neo-shadow-lg: 8px 8px 0px 0px rgba(0,0,0,1);
+  }
+
+  body {
+    background: var(--neo-yellow);
+    background-image:
+      radial-gradient(circle, #00000015 1px, transparent 1px);
+    background-size: 20px 20px;
+    min-height: 100vh;
+    color: #1a1a2e;
+    font-family: 'Fredoka', 'Comic Neue', 'Segoe UI', system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Bangers', 'Fredoka', cursive;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* 3D Flip Card Styles */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Comic Book Bubble Pointers */
+.comic-bubble {
+  position: relative;
+}
+
+.comic-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 32px;
+  border-width: 14px 12px 0;
+  border-style: solid;
+  border-color: #000 transparent;
+  display: block;
+  width: 0;
+}
+
+.comic-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 34px;
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: #ffffff transparent;
+  display: block;
+  width: 0;
+  z-index: 1;
+}
+
+/* Playful floating animations */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes pop-effect {
+  0% {
+    transform: scale(0.8) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.12) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.08); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes jelly {
+  0%, 100% { transform: scale(1, 1); }
+  25% { transform: scale(0.95, 1.05); }
+  50% { transform: scale(1.05, 0.95); }
+  75% { transform: scale(0.98, 1.02); }
+}
+
+@keyframes comic-shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-4px) rotate(-1deg); }
+  20% { transform: translateX(4px) rotate(1deg); }
+  30% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  50% { transform: translateX(0); }
+}
+
+@keyframes starburst-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: float-slow 3s ease-in-out infinite;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+.animate-pop {
+  animation: pop-effect 0.4s ease-out;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s ease-out;
+}
+
+.animate-jelly {
+  animation: jelly 0.7s ease-in-out;
+}
+
+.animate-comic-shake {
+  animation: comic-shake 0.6s ease-in-out;
+}
+
+/* Neobrutalist scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--neo-yellow);
+  border-left: 3px solid #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neo-pink);
+  border: 3px solid #000;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neo-cyan);
+}
+
+/* Comic panel dotted background */
+.comic-dots {
+  background-image: radial-gradient(circle, #00000010 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+}
+
+/* Zigzag divider */
+.zigzag-top {
+  position: relative;
+}
+.zigzag-top::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(135deg, transparent 33.33%, #000 33.33%, #000 66.67%, transparent 66.67%),
+              linear-gradient(225deg, transparent 33.33%, #000 33.33%, #000 66.67%, transparent 66.67%);
+  background-size: 20px 10px;
+}
+
+/* Selection styling */
+::selection {
+  background: var(--neo-pink);
+  color: #000;
+}
