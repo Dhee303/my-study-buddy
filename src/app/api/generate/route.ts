@@ -28,11 +28,12 @@ export async function POST(req: NextRequest) {
     const mascotObj = getMascot(mascotId);
 
     // Determine the API key to use
-    // Only use GEMINI_API_KEY (server-only). Never use NEXT_PUBLIC_ prefixed
-    // env vars for secrets — Next.js inlines them into the client JS bundle.
+    // Supports GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY (useful for Netlify env variables),
+    // or key provided directly via the client Settings modal.
     const apiKey =
       (clientApiKey && clientApiKey.trim()) ||
       process.env.GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
       '';
 
     const isPlaceholderKey =
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
             back: `An exciting subject of discovery that helps us understand how the world and universe work!`
           },
           {
-            front: `Why is ${topic} important?`,
+            front: `Why is ${topic}'s discovery important?`,
             back: `It gives us the tools to think critically, solve mysteries, and create new things!`
           }
         ],
@@ -97,17 +98,10 @@ export async function POST(req: NextRequest) {
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Initialize model – getGenerativeModel() validates lazily on
-    // generateContent(), so we handle fallback there instead.
     const generationConfig = {
       responseMimeType: 'application/json' as const,
       temperature: 0.7,
     };
-
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash-lite',
-      generationConfig,
-    });
 
     const toneInstruction = tone ? `Tone and setting preference: ${tone}.` : '';
 
@@ -159,17 +153,36 @@ Return EXCLUSIVELY valid JSON in this structure:
   "learningKeyTakeaway": "1-sentence recap of the core concept mastered."
 }`;
 
+    // Resilient multi-model fallback chain:
+    // Tries available models in order so temporary high-demand spikes or tier differences don't break generation.
+    const candidateModels = [
+      'gemini-3.5-flash-lite',
+      'gemini-3.8-flash',
+      'gemini-2.5-flash',
+      'gemini-1.5-flash',
+    ];
+
     let result;
-    try {
-      result = await model.generateContent(systemPrompt);
-    } catch (primaryErr) {
-      // gemini-2.5-flash failed – fall back to gemini-3.5-flash-lite
-      console.warn('Primary model (gemini-2.5-flash) failed, trying gemini-3.5-flash-lite:', primaryErr);
-      const fallbackModel = genAI.getGenerativeModel({
-        model: 'gemini-3.5-flash-lite',
-        generationConfig,
-      });
-      result = await fallbackModel.generateContent(systemPrompt);
+    let lastError: unknown;
+
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig,
+        });
+        result = await model.generateContent(systemPrompt);
+        if (result && result.response) {
+          break;
+        }
+      } catch (modelErr) {
+        console.warn(`Model ${modelName} failed, trying next candidate:`, modelErr);
+        lastError = modelErr;
+      }
+    }
+
+    if (!result || !result.response) {
+      throw lastError || new Error('All Gemini model candidates failed to generate content.');
     }
 
     const responseText = result.response.text();
