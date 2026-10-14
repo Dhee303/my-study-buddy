@@ -78,7 +78,7 @@ Step 4: Open in Browser
   - Validates user input (topic, child age 5-15).
   - Selects the active API key (from request payload, GEMINI_API_KEY, or NEXT_PUBLIC_GEMINI_API_KEY).
   - Falls back gracefully to high-quality demo stories if key is unset or placeholder.
-  - Instantiates GoogleGenerativeAI with model 'gemini-1.5-flash'.
+  - Instantiates GoogleGenerativeAI with model 'gemini-2.5-flash' (fallback: 'gemini-3.5-flash-lite').
   - Sends a structured system prompt requiring strict JSON output matching StoryPayload.
   - Parses and strips markdown fences (```json ... ```).
   - Normalizes quiz answer options and returns validated JSON to the frontend.

@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState } from 'react';
 import { X, Key, ExternalLink, ShieldCheck, Sparkles, Check } from 'lucide-react';
 

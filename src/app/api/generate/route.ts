@@ -28,10 +28,11 @@ export async function POST(req: NextRequest) {
     const mascotObj = getMascot(mascotId);
 
     // Determine the API key to use
+    // Only use GEMINI_API_KEY (server-only). Never use NEXT_PUBLIC_ prefixed
+    // env vars for secrets — Next.js inlines them into the client JS bundle.
     const apiKey =
       (clientApiKey && clientApiKey.trim()) ||
       process.env.GEMINI_API_KEY ||
-      process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
       '';
 
     const isPlaceholderKey =
@@ -95,26 +96,18 @@ export async function POST(req: NextRequest) {
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Choose model with fallback
-    let model;
-    try {
-      model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
-      });
-    } catch {
-      model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
-      });
-    }
+
+    // Initialize model – getGenerativeModel() validates lazily on
+    // generateContent(), so we handle fallback there instead.
+    const generationConfig = {
+      responseMimeType: 'application/json' as const,
+      temperature: 0.7,
+    };
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.5-flash-lite',
+      generationConfig,
+    });
 
     const toneInstruction = tone ? `Tone and setting preference: ${tone}.` : '';
 
@@ -169,14 +162,12 @@ Return EXCLUSIVELY valid JSON in this structure:
     let result;
     try {
       result = await model.generateContent(systemPrompt);
-    } catch {
-      // If 2.5-flash failed, try 1.5-flash
+    } catch (primaryErr) {
+      // gemini-2.5-flash failed – fall back to gemini-3.5-flash-lite
+      console.warn('Primary model (gemini-2.5-flash) failed, trying gemini-3.5-flash-lite:', primaryErr);
       const fallbackModel = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
+        model: 'gemini-3.5-flash-lite',
+        generationConfig,
       });
       result = await fallbackModel.generateContent(systemPrompt);
     }
@@ -241,10 +232,10 @@ Return EXCLUSIVELY valid JSON in this structure:
       // Ensure options have clean formatting
       const options = Array.isArray(q.options)
         ? q.options.map((opt, i) => {
-            const letter = ['A', 'B', 'C', 'D'][i];
-            const clean = opt.replace(/^[A-D]\)\s*/, '').trim();
-            return `${letter}) ${clean}`;
-          })
+          const letter = ['A', 'B', 'C', 'D'][i];
+          const clean = opt.replace(/^[A-D]\)\s*/, '').trim();
+          return `${letter}) ${clean}`;
+        })
         : ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'];
 
       return {
@@ -258,19 +249,19 @@ Return EXCLUSIVELY valid JSON in this structure:
     // Normalize flashcards
     const normalizedFlashcards = Array.isArray(parsedPayload.flashcards) && parsedPayload.flashcards.length > 0
       ? parsedPayload.flashcards.map(f => ({
-          front: f.front || `Key Concept of ${topic}`,
-          back: f.back || `Important discovery about ${topic}`
-        }))
+        front: f.front || `Key Concept of ${topic}`,
+        back: f.back || `Important discovery about ${topic}`
+      }))
       : [
-          {
-            front: `Core Idea of ${topic}`,
-            back: parsedPayload.learningKeyTakeaway || `Key principle discovered in ${parsedPayload.storyTitle}`
-          },
-          {
-            front: `How does it work?`,
-            back: `Everything connects together step-by-step through fascinating rules of nature and logic!`
-          }
-        ];
+        {
+          front: `Core Idea of ${topic}`,
+          back: parsedPayload.learningKeyTakeaway || `Key principle discovered in ${parsedPayload.storyTitle}`
+        },
+        {
+          front: `How does it work?`,
+          back: `Everything connects together step-by-step through fascinating rules of nature and logic!`
+        }
+      ];
 
     const finalPayload: StoryPayload = {
       storyTitle: parsedPayload.storyTitle,
